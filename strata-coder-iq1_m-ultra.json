@@ -54,7 +54,6 @@
   "top_p": 0.95,
   "top_k": 20
  },
- "reasoning_budget_tokens": 8192,
  "fit_max_tokens": true,
  "vision": {
   "exe": "D:\\Strata\\engine\\strata-vision.exe",
