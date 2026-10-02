@@ -34,6 +34,7 @@ td.log
 /mtp/
 /run-*.bat
 !/run-coder-*.bat
+!/opencode-coder-*.bat
 /run-*.sh
 /strata-*.json
 !/strata-coder-*.json
