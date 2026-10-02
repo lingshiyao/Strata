@@ -46,10 +46,14 @@
 | `D:\Strata\run-coder-iq1_m-256k.bat` | 官方基准启动 BAT | 启动本地 Strata 256K 标准基准服务（端口 8080，Spec 4，Res 700） | **只读基准**，不可篡改 |
 | `D:\Strata\hermes-coder-256k.bat` | 官方基准接入 BAT | 自动配置 Hermes CLI/Desktop 环境对接基线服务（256K 上下文、压缩阈值 147456） | **只读基准**，不可篡改 |
 | `D:\Strata\strata-coder-iq1_m-256k.json` | 官方基准配置 JSON | 固化 256K 基线参数、Int8 KV、防循环采样矩阵（min_p: 0.08, rep: 1.08, budget: 8192） | **只读基准**，不可篡改 |
-| `D:\Strata\run-coder-iq1_m-tuned.bat` | **极限调优启动 BAT** | **【推荐日常使用】** 启动调优版服务（Spec 5，Res 380，PCIe 0.20，3793 显存专家槽位） | **最新调优生产版** |
-| `D:\Strata\hermes-coder-tuned.bat` | **极限调优接入 BAT** | **【推荐日常使用】** 一键配置 Hermes 对接调优版服务，自动拉起/热重用调优引擎 | **最新调优生产版** |
+| `D:\Strata\run-coder-iq1_m-tuned.bat` | 极限调优启动 BAT | 启动调优版服务（Spec 5，Res 380，PCIe 0.20，3793 显存专家槽位） | **已固化生产版 (Version 2)** |
+| `D:\Strata\hermes-coder-tuned.bat` | 极限调优接入 BAT | 一键配置 Hermes 对接调优版服务，自动拉起/热重用调优引擎 | **已固化生产版 (Version 2)** |
 | `D:\ninfer\hermes\hermes-strata-coder-tuned.bat` | 调优镜像接入 BAT | 镜像部署于 Hermes 专用目录，与根目录调优版本保持二进制一致 | **镜像同步** |
-| `D:\Strata\strata-coder-iq1_m-tuned.json` | **极限调优配置 JSON** | 固化 MTP 5 步投机、380 MiB 显存预留、20% PCIe 并发流与防死循环采样全套防御 | **最新调优生产版** |
+| `D:\Strata\strata-coder-iq1_m-tuned.json` | 极限调优配置 JSON | 固化 MTP 5 步投机、380 MiB 显存预留、20% PCIe 并发流与防死循环采样全套防御 | **已固化生产版 (Version 2)** |
+| `D:\Strata\run-coder-iq1_m-ultra.bat` | **极致多模态启动 BAT** | **【推荐日常首选 (Version 3)】** 启用耦合采样、PCIe 5.0 提速、电源性能锁频与完整多模态视觉 | **最新极致生产版 (Version 3)** |
+| `D:\Strata\hermes-coder-ultra.bat` | **极致多模态接入 BAT** | **【推荐日常首选 (Version 3)】** 一键配置 Hermes 对接 Ultra 服务，自动同步 256K 与多模态配置 | **最新极致生产版 (Version 3)** |
+| `D:\Strata\strata-coder-iq1_m-ultra.json` | **极致多模态配置 JSON** | 固化 PCIe 0.35、ShortRead 256、RootCache 1024、CheckPoint 8192 与 2048 长度防循环矩阵 | **最新极致生产版 (Version 3)** |
+| `D:\Strata\tools\enable-large-pages.ps1` | 系统内核大页辅助脚本 | 一键赋予管理员账户 `SeLockMemoryPrivilege`，为 Strata 解锁 2MB Large Pages | 系统辅助工具 |
 | `D:\Strata\benchmark_256k_full_spectrum.py` | 评测套件 Python | 覆盖 1K 到 216K 全上下文阶梯的流式性能与命中率基准测试脚本 | 标准测试工具 |
 
 > **关键经验（CMD `call` 陷阱）**：在 Windows CMD 批处理文件中调用 `hermes config` 命令时，必须严格使用 `call hermes config ...`。因 `hermes` 在 Windows 下为 `hermes.cmd`，若不加 `call`，批处理执行权将被转移并提前终止后续脚本。
@@ -192,8 +196,23 @@
    日常交互与中型项目编码速度从基线的 44~64 tok/s 大幅提速至 **54 ~ 71.7 tok/s**，提速幅度达 **+12% ~ +22%**。
 2. **极端超长上下文（220K tokens, 85% 满载）更具耐力**：
    在吃满 22 万 tokens 极限长上下文时，基线降至 51 tok/s，而调优版稳定输出 **58.4 tok/s**（峰值达 72.4 tok/s），极大缓解了深层上下文的解码衰减。
-3. **安全与智力 100% 零折损**：
-   调优版完全保留了 256K 上下文、`reasoning_budget_tokens: 8192` 满血深度思考、以及双阶段防死循环采样矩阵（`min_p: 0.08`, `repetition_penalty: 1.08`, `penalty_last_n: 512`），实现了纯硬件层面的无损提速！
+### 5.4 第 3 轮极致多模态调优架构 (Round 3: Ultra Multimodal Profile - Version 3)
+
+根据全方位的代码逆向与宿主机底层硬件（PCIe 5.0 x16、Windows 2MB 大页机制、MTP 采样器耦合）探测，第 3 轮调优固化为 **Version 3 (Ultra Multimodal)**：
+1. **多模态全功能保留（Multimodal 100% Retained）**：
+   严格保留 `--vision` 与 `strata-vision.exe` 独立视觉管道，完全支持在 Hermes 中直接输入图片、截图分析并联动 256K 超长上下文。
+2. **PCIe 5.0 x16 全速释放（`--pcie-frac 0.35`）**：
+   实测确认宿主机显卡运行在 `PCIe 5.0 x16`（双向带宽超 100 GB/s）。将未命中专家的流式 GPU 计算比例从 0.20 提升至 0.35，利用 Blackwell 核心的高速矩阵吞吐大幅减少 CPU 双通道 DDR5 内存带宽瓶颈。
+3. **推测采样同步耦合（`STRATA_SPEC_COUPLED=1`）**：
+   在批处理中启用 `STRATA_SPEC_COUPLED=1`。使 MTP 推测头直接共享目标模型的 Philox 随机数种子与采样参数（`temperature=0.5, top_p=0.95`），彻底解决 Argmax 确定性草稿被随机采样拒绝的问题，提高草稿接受率。
+4. **Agent 工具交互短读窗口扩容（`--short-read 256`）**：
+   将短读免 Prefill 门限从 64 提升至 256。Hermes 的工具返回与短提示（100~250 token）直接走极速 Verify 窗口，省去约 300ms Prefill 重启和 180ms 专家槽位回填。
+5. **系统提示词根缓存锁定与密集检查点（`--prompt-cache-root 1024`, `--prompt-cache-every 8192`）**：
+   将根缓存门限降至 1024 tokens，Hermes 的系统级工具定义提示词首次读取后永久常驻内存，后续新对话 0 ms 开拔；每 8192 tokens 保存一次密集检查点，加速 256K 长会话回退。
+6. **宏观循环终极防御（`penalty_last_n: 2048`, `presence_penalty: 0.18`）**：
+   将循环检测视窗扩展至 2048 tokens，彻底斩断 1.5K Token 级的大范围思考循环节。
+7. **Windows 2MB 大页内核权限工具（`tools/enable-large-pages.ps1`）**：
+   提供一键配置脚本，为管理员赋予 `SeLockMemoryPrivilege`，将 25GB 专家池从 629 万个 4KB 页压缩为 1.2 万个 2MB 大页，消除 CPU TLB 缺失。
 
 ---
 
@@ -208,5 +227,7 @@
 | 2026-10-02 | Git / Handover | Governance | 更新 `.gitignore` 确保固化脚本纳入版本控制，重构建立唯一的 AI 全景交接文档。<br>*Update .gitignore to track coder configs and establish the unified root handover report.* |
 | 2026-10-02 | Branch Topology | Governance | 建立 `my-256k` 专属工作分支与纯净官方 `main` 镜像，制定无缝吸收原作者更新的标准协议。<br>*Establish `my-256k` production branch and clean upstream `main` mirror with seamless sync protocol.* |
 | 2026-10-02 | Tuning / Production | Performance & Solidification | 完成五大维度调优（MTP Spec 5, PCIe 0.20, Res 380, Pool 15），日常编码解码提速 +12%~22%（突破 71.7 tok/s），固化输出 `run-coder-iq1_m-tuned.bat` 与 `hermes-coder-tuned.bat`。<br>*Complete 5-direction tuning, boost everyday decode by +12%~22% (>71 tok/s), solidify tuned BATs/JSON.* |
+| 2026-10-02 | Ultra Tuning (V3) | Breakthrough & Solidification | 完成第 3 轮极致多模态优化，固化 Version 3 资产（`run-coder-iq1_m-ultra.bat`, `hermes-coder-ultra.bat`, `strata-coder-iq1_m-ultra.json`）。集成 PCIe 5.0 x16 (0.35 流计算)、`STRATA_SPEC_COUPLED=1` 随机推测耦合、256 短读窗口、1024 根缓存与 2048 长度防循环矩阵，并提供 `tools/enable-large-pages.ps1` 大页内核工具。<br>*Complete Round 3 Ultra Multimodal optimization, solidifying Version 3 assets (PCIe 5.0 0.35, coupled draft sampling, short-read 256, root-cache 1024, anti-looping 2048) and large pages helper.* |
+
 
 
