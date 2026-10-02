@@ -33,8 +33,10 @@ td.log
 /packs/
 /mtp/
 /run-*.bat
+!/run-coder-*.bat
 /run-*.sh
 /strata-*.json
+!/strata-coder-*.json
 /strata-*.log
 /build-strata.bat
 

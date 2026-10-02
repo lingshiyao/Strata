@@ -30,7 +30,9 @@ import ctypes
 import json
 import os
 import queue
+import select
 import signal
+import socket
 import subprocess
 import sys
 import tempfile
@@ -1730,6 +1732,10 @@ def make_handler(svc: Service):
                     else:
                         self.wfile.write(b"data: " + json.dumps(c, ensure_ascii=False).encode() + b"\n\n")
                     self.wfile.flush()
+                    if hasattr(self, "connection"):
+                        r, _, _ = select.select([self.connection], [], [], 0)
+                        if r and not self.connection.recv(1, socket.MSG_PEEK):
+                            raise OSError("client disconnected")
                 self.wfile.write(b"data: [DONE]\n\n")
             except OSError:
                 cancel.set()                                 # client went away: stop the engine
@@ -1762,6 +1768,10 @@ def make_handler(svc: Service):
                         self.wfile.write(f"event: {name}\n".encode() + b"data: " +
                                          json.dumps(e, ensure_ascii=False).encode() + b"\n\n")
                     self.wfile.flush()
+                    if hasattr(self, "connection"):
+                        r, _, _ = select.select([self.connection], [], [], 0)
+                        if r and not self.connection.recv(1, socket.MSG_PEEK):
+                            raise OSError("client disconnected")
             except OSError:
                 cancel.set()
                 events.close()
