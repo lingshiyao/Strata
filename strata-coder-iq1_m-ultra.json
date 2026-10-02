@@ -50,11 +50,9 @@
  "gpu": 0,
  "gpus_asked": true,
  "sampling": {
-  "temperature": 0.5,
+  "temperature": 0.6,
   "top_p": 0.95,
-  "top_k": 40,
-  "min_p": 0.08,
-  "repetition_penalty": 1.08
+  "top_k": 20
  },
  "reasoning_budget_tokens": 8192,
  "fit_max_tokens": true,
