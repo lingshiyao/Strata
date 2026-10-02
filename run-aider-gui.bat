@@ -49,6 +49,7 @@ echo.
 aider --openai-api-base %BASE_URL% ^
       --openai-api-key dummy ^
       --model %MODEL_NAME% ^
+      --model-settings-file "D:\Strata\.aider.model.settings.yml" ^
       --edit-format diff ^
       --map-tokens 1024 ^
       --no-show-model-warnings ^
