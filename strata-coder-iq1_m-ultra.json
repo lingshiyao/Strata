@@ -54,12 +54,10 @@
   "top_p": 0.95,
   "top_k": 40,
   "min_p": 0.08,
-  "repetition_penalty": 1.08,
-  "penalty_last_n": 2048,
-  "frequency_penalty": 0.15,
-  "presence_penalty": 0.18
+  "repetition_penalty": 1.08
  },
- "reasoning_budget_tokens": 8192,
+ "reasoning_budget_tokens": 1024,
+ "fit_max_tokens": true,
  "vision": {
   "exe": "D:\\Strata\\engine\\strata-vision.exe",
   "mmproj": "E:\\Strata-data\\models\\mmproj-Qwen3.8-Flash-Next-BF16.gguf",
