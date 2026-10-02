@@ -50,4 +50,5 @@ build-vision.bat
 /dist/
 *.done
 /third_party/*.zip
-
+.aider*
+!/run-aider*.bat
