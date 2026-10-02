@@ -214,6 +214,19 @@
 7. **Windows 2MB 大页内核权限工具（`tools/enable-large-pages.ps1`）**：
    提供一键配置脚本，为管理员赋予 `SeLockMemoryPrivilege`，将 25GB 专家池从 629 万个 4KB 页压缩为 1.2 万个 2MB 大页，消除 CPU TLB 缺失。
 
+#### 实测性能实证 (Version 3: Ultra Empirical Benchmark Results)
+
+使用 `tools/test_ultra_empirical.py` 对 Version 3 服务进行端到端标准基准评测：
+
+| 评测任务 | 生成 Tokens | TTFT (首字延迟) | **端到端解码速度 (Decode Speed)** | 总耗时 | 推测草稿接受与缓存命中 (MTP & Cache) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **1. 生产级算法 (SkipList in Python)** | 600 tokens | **1.00 s** | **68.9 tok/s** (客户端 69.1) | 9.68 s | 专家命中率 83.4%，Suffix 草稿接受率 **91.7%** (11/12) |
+| **2. 复杂游戏逻辑 (Balatro 德扑算分引擎)** | 800 tokens | **1.04 s** | **80.1 tok/s** (客户端 **80.2**) | 11.01 s | MTP 接受 460/738 词，Suffix 草稿接受率 **84.4%** (65/77) |
+| **3. Agent 工具短读快速续写 (Quick Refactor)** | 400 tokens | **0.89 s** (破1秒) | **71.9 tok/s** (客户端 72.2) | 6.44 s | 专家命中率 75.7%，Suffix 草稿接受率 **87.5%** (21/24) |
+
+* **整体均值与爆发峰值**：Ultra 版在多模态视觉 100% 保持的前提下，平均解码速度达到 **73.8 tok/s**，复杂代码生成峰值成功跨越 **80.2 tok/s** 大关！
+* **首字延迟 (TTFT)**：在 1024 根缓存与 256 短读窗口加持下，首字响应全面压缩至 **0.89s ~ 1.04s**。
+
 ---
 
 ## 6. 变更审计与版本日志 (Change Audit & Version Log)
