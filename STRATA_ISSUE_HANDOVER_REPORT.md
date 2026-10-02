@@ -49,6 +49,23 @@
 
 > **关键经验（CMD `call` 陷阱）**：在 Windows CMD 批处理文件中调用 `hermes config` 命令时，必须严格使用 `call hermes config ...`。因 `hermes` 在 Windows 下为 `hermes.cmd`，若不加 `call`，批处理执行权将被转移并提前终止后续脚本。
 
+### 2.1 分支治理与原作者更新同步策略 (Branch Governance & Upstream Sync Protocol)
+
+为确保“既能第一时间无缝吸收原作者新功能，又绝不冲垮本地已固化 256K 生产配置”，本项目严格采用“基准-定制解耦”双分支治理拓扑：
+
+* **`main` 分支（原作者纯净收件箱 / Upstream Mirror）**：
+  * 保持 100% 官方原汁原味代码，严格对齐 `origin/main`（`https://github.com/Niko1221/Strata.git`）。
+  * 任何本地 AI Agent 严禁直接在 `main` 上开发提交。
+  * 作用：原作者发布引擎新版本时，随时一键拉取（`git pull`），永远零冲突、零闪退。
+* **`my-256k` 分支（本地 256K 生产与调优专属工作间 / Production & Tuning Workspace）**：
+  * **当前默认活动分支**。所有的 256K 配置文件、启动批处理、死循环防御参数、调优实验与本文档均在此分支上维护。
+* **后续 AI 同步原作者更新的标准协议 (Sync Upstream Protocol)**：
+  1. `git fetch origin`（获取原作者最新提交）
+  2. `git checkout main && git merge origin/main`（更新本地收件箱至官方最新）
+  3. `git checkout my-256k`（切回生产工作间）
+  4. `git merge main`（将官方引擎更新合并入 256K 生产环境）
+  5. 验证服务启动并更新本文档与 Git 记录。
+
 ---
 
 ## 3. 死循环根因诊断与双阶段防御体系 (Anti-Looping Architecture & Root Cause)
@@ -141,3 +158,5 @@
 | 2026-10-02 | Engine / Server | Feature & Resilience | `serve/server.py` 增加客户端断开连接检测（`select` + `MSG_PEEK`），避免客户端点击 Stop 后服务端持续空转。<br>*Add socket disconnect detection in server.py for immediate inference cancellation.* |
 | 2026-10-02 | Benchmark | Empirical Verification | 编写并执行 `benchmark_256k_full_spectrum.py`，完成 1K 至 216K 全阶梯性能测试，确证 256K 稳定性与无断崖衰减。<br>*Create and execute 256K full-spectrum benchmark, verifying 51.1~71.3 tok/s performance across context range.* |
 | 2026-10-02 | Git / Handover | Governance | 更新 `.gitignore` 确保固化脚本纳入版本控制，重构建立唯一的 AI 全景交接文档。<br>*Update .gitignore to track coder configs and establish the unified root handover report.* |
+| 2026-10-02 | Branch Topology | Governance | 建立 `my-256k` 专属工作分支与纯净官方 `main` 镜像，制定无缝吸收原作者更新的标准协议。<br>*Establish `my-256k` production branch and clean upstream `main` mirror with seamless sync protocol.* |
+
