@@ -966,6 +966,9 @@ class Service:
                 raise ValueError(f"prompt ({len(ids)} tokens) + max tokens ({max_new}) exceeds the context "
                                  f"({self.engine.max_context}); requests are never truncated")
             max_new = max(1, room)          # --fit-max-tokens: a shorter completion beats a 400
+        budget = self.reasoning_budget_tokens or 0
+        if self.fit_max_tokens and budget > 0 and 0 < max_new < budget:
+            max_new = room
         return ids, kwargs.get("enable_thinking", True) is not False, max_new
 
     def _note(self, n, evs):

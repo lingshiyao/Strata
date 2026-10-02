@@ -5,6 +5,9 @@ set "PYTHONIOENCODING=utf-8"
 
 title OpenCode x Strata Qwen3.8 Coder IQ1_M - 256K Ultra (High Performance Multimodal)
 
+REM 0. Unlock OpenCode client output token limit to 160K (128K Thinking + 32K Code)
+set "OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX=163840"
+
 set "CTX=262144"
 set "PORT=8080"
 set "BASE_URL=http://127.0.0.1:%PORT%/v1"
