@@ -53,3 +53,16 @@ build-vision.bat
 /third_party/*.zip
 .aider*
 !/run-aider*.bat
+
+# Local benchmark artifacts, test suites, and temporary tools
+/benchmark_runs/
+/benchmark_results/
+/benchmark_prompts/
+/star_odyssey_3d/
+/balatro_intelligence_test/balatro_game/
+/tools/temp_check.js
+/tools/test_ready.py
+/tools/probe_thunder_thought.py
+/tools/orchestrate_remaining.py
+/tools/run_comprehensive_matrix.py
+
