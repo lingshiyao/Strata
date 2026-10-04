@@ -501,8 +501,14 @@ bin/json/bat 脚手架 + 真机 A/B。**顺带把 T1-2（槽位扫描）一并�
 
 - **新增文档**：`docs/T1_VERDICT_2026-10-04.md`（完整判决报告，含源码证据与全部数据表）；
   `docs/TUNING_REAUDIT_AND_PLAN_2026-10-04.md`（智商/速度再审计与方案，T1 一节已加判决框）。
-- **归档脚本**：`tools/t1_probe/`（7 个取证/分析/模拟脚本 + 2 份运行日志 + `README.md`），
-  按 §10.2 治理原则归档至既有系统目录，不堆放根目录。可直接运行复现全部数据表。
+- **归档脚本**：`tools/t1_probe/`（`sim_adaptive.py` + `analyze_trace.py` + `README.md`），
+  按 §10.2 治理原则归档至既有系统目录，不堆放根目录。这两个脚本是**可复用方法**
+  （离线自适应层模拟器 / trace 分析器），本地存有 trace 时可直接运行复现数据表。
+- **2026-10-05 精简**：该目录原含 8 个文件，另 5 个脚本（`profile_provenance.py`、
+  `profile_reindex_test.py`、`profile_subseq_test.py`、`build_prompt.py`、`sections.py`）
+  各自只回答一个一次性问题、结论已完整固化在 `docs/T1_VERDICT_2026-10-04.md` §5.2，故予删除；
+  两份运行日志（`run_trace.log` / `run_trace2.log`）为可再生中间产物，一并清除。
+  **判决本身未变**——证据链由「脚本 + 文档」收敛为「文档为准 + 方法脚本留存」。
 - **`.gitignore` 变更**：新增 `/.workbuddy-ai/` 忽略项。该目录为助手本地工作区
   （项目记忆 + 探针临时数据 + 可再生的 trace 二进制），不入版本控制；
   其中**可复用的脚本已按上一条归档到 `tools/t1_probe/`**，不受忽略影响。

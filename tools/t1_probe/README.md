@@ -25,13 +25,20 @@
 
 | 脚本 | 作用 |
 | :--- | :--- |
-| `profile_provenance.py` | 比对 coder profile（48×256）与出厂 profile（48×512）的结构 |
-| `profile_reindex_test.py` | 检验「coder profile 是出厂排名重新索引」的若干假设 |
-| `profile_subseq_test.py` | 决定性判据：Kendall tau、保序子序列、top-N 集合重合度 |
-| `build_prompt.py` | 用 pack 自带 tokenizer 给代表性编码 prompt 分词（输出逗号分隔 token id） |
-| `sections.py` | 计算各任务段在 token 序列中的边界，供 leave-one-task-out 使用 |
 | `analyze_trace.py` | 阶段 1-B：静态命中率、hit(N) 曲线、前后半段泛化、K 折分块、集中度 |
 | `sim_adaptive.py` | 阶段 1-C（**核心**）：离线复刻自适应层，多臂对照 + 会话长度扫描 + 频率敏感性 |
+
+> **2026-10-05 精简**：本目录原有 8 个文件，其中 5 个脚本各自只回答一个一次性问题、
+> 结论已完整固化在 `docs/T1_VERDICT_2026-10-04.md`，故予删除，不再随仓库维护。
+> 保留下来的两个脚本 + 本 README 是**可复用方法**（离线自适应层模拟器 + trace 分析器 + 踩坑记录）。
+>
+> | 已删脚本 | 它回答的问题 | 结论落在 |
+> | :--- | :--- | :--- |
+> | `profile_provenance.py` | coder profile 与出厂 profile 的结构差异 | `T1_VERDICT` §5.2 |
+> | `profile_reindex_test.py` | 「coder = 出厂排名重新索引」的 4 组假设检验 | `T1_VERDICT` §5.2 |
+> | `profile_subseq_test.py` | 决定性判据：保序子序列 / Kendall tau / top-N 重合度 | `T1_VERDICT` §5.2 |
+> | `build_prompt.py` | 把 benchmark prompt 拼成分词串（trace 的输入） | 产物留在本地，见下节 |
+> | `sections.py` | 各任务段的 token 边界（leave-one-task-out 用） | 产物留在本地，见下节 |
 
 运行方式（需 `regex`，用项目 venv）：
 
@@ -52,8 +59,10 @@
 只有 `trace_decode.bin` 是有效数据。重新生成：
 
 ```bash
-# 1) 分词（输出到 .workbuddy-ai/t1_probe/prompt_tokens.txt）
-.venv/Scripts/python.exe tools/t1_probe/build_prompt.py
+# 1) 分词 —— 直接复用本地已生成的 token 文件，无需重新分词
+#    原分词脚本 build_prompt.py 已删除（见上节）。分词是确定性的，
+#    该文件内容不会变：2683 个 token id，逗号分隔。
+ls -l .workbuddy-ai/t1_probe/prompt_tokens.txt
 
 # 2) 采集（native IQ pack 的必需参数：--native/--spec/--prefill；--dump-routing 不可与 --no-pool 同用）
 export PATH="/d/Strata/.venv/Lib/site-packages/nvidia/cu13/bin/x86_64:$PATH"
