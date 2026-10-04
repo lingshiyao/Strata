@@ -392,6 +392,22 @@
    - **测试工具保留**：`tools/benchmark_ultra_256k.py` 为验证 256K 超长上下文（247K 实测无死角通过）的核心压测工具，保留于代码库供后续回归质检使用。
    - **生产文件完好无损**：`strata-coder-iq1_m-ultra.json`、`run-coder-iq1_m-ultra.bat`、`opencode-coder-ultra.bat`、`hermes-coder-ultra.bat` 维持 100% 生产巅峰状态。
 
+---
+
+## 10. 街机重装坦克大战主设计规范与视觉资产沉淀 (Arcade Voxel Tank Battle GDD & Assets)
+
+### 10.1 研发背景与测试定位
+为深度检验 Strata 生产底座（Qwen3.8 Coder 125B MoE + Mode 2）在工业级复杂游戏架构设计与数千行单文件自闭环生成能力，正式规划并编撰了“街机重装坦克大战（Iron Fortress）”主设计规范：
+- 摒弃红白机简陋点阵方块，确立 90 年代黄金街机（《Tank Force》/《合金弹头》）重装风格；
+- 采用“大颗粒复古像素 × 伪体素 2.5D 层叠”纯代码渲染管线，杜绝任何外部素材依赖；
+- 针对模型思考容易陷入“字符数数泥潭”的实证痛点，直接在设计书中内嵌 5 大标准 ASCII 地图与 12 类体素资产尺寸表。
+
+### 10.2 新增归档文件治理清单
+严格遵循项目规范治理原则，资产与文档严禁堆放于根目录，规范归档至已有系统目录：
+1. `docs/ARCADE_TANK_BATTLE_PRD.md`：街机重装坦克大战全案主设计规范书（Master GDD / PRD）。
+2. `docs/media/arcade_tank_boss.jpg`：街机决战超巨型要塞（Giga-Fortress）视觉基准参考图。
+
+
 
 
 
