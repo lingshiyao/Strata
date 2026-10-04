@@ -57,7 +57,7 @@
   "repetition_penalty": 1.08,
   "penalty_last_n": 256
  },
- "reasoning_budget_tokens": 32000,
+ "reasoning_budget_tokens": 16384,
  "fit_max_tokens": true,
  "vision": {
   "exe": "D:\\Strata\\engine\\strata-vision.exe",
