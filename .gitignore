@@ -66,3 +66,7 @@ build-vision.bat
 /tools/orchestrate_remaining.py
 /tools/run_comprehensive_matrix.py
 
+# Assistant working area: local memory, probe scratch data, regenerable traces.
+# The reusable probe scripts were archived to /tools/t1_probe/ instead (see its README).
+/.workbuddy-ai/
+

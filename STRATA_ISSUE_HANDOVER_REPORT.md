@@ -242,6 +242,7 @@
 | 2026-10-02 | Tuning / Production | Performance & Solidification | 完成五大维度调优（MTP Spec 5, PCIe 0.20, Res 380, Pool 15），日常编码解码提速 +12%~22%（突破 71.7 tok/s），固化输出 `run-coder-iq1_m-tuned.bat` 与 `hermes-coder-tuned.bat`。<br>*Complete 5-direction tuning, boost everyday decode by +12%~22% (>71 tok/s), solidify tuned BATs/JSON.* |
 | 2026-10-02 | Ultra Tuning (V3) | Breakthrough & Solidification | 完成第 3 轮极致多模态优化，固化 Version 3 资产（`run-coder-iq1_m-ultra.bat`, `hermes-coder-ultra.bat`, `strata-coder-iq1_m-ultra.json`）。集成 PCIe 5.0 x16 (0.35 流计算)、`STRATA_SPEC_COUPLED=1` 随机推测耦合、256 短读窗口、1024 根缓存与 2048 长度防循环矩阵，并提供 `tools/enable-large-pages.ps1` 大页内核工具。<br>*Complete Round 3 Ultra Multimodal optimization, solidifying Version 3 assets (PCIe 5.0 0.35, coupled draft sampling, short-read 256, root-cache 1024, anti-looping 2048) and large pages helper.* |
 | 2026-10-04 | Cognitive Budget (V4) | Breakthrough & Solidification | 完成 18 项工业级基准长思维链认知审计，发现 14.2K 黄金收敛拐点定律与过度思考自毁效应。固化思考预算为标准二进制 `16384` Tokens ($16 \times 1024$)，维持 `min_p: 0.08`, `rep_pen: 1.08`。经红蓝对抗评审合成完全体正向时序门控 System Prompt，并在 `run-coder-iq1_m-ultra.bat` 中实现原版/优化版双模无缝选择菜单。<br>*Complete 18-benchmark forensic cognitive audit, establishing 14.2K golden inflection law and overthinking destruction effect. Solidify reasoning budget to standard 16384 tokens with min_p 0.08, rep_pen 1.08. Synthesize battle-tested positive phase-gated System Prompt via dual-agent adversarial review, integrating seamless dual-mode menu into run-coder-iq1_m-ultra.bat.* |
+| 2026-10-04 | Expert Cache (T1) | Empirical Audit & **Verdict: Cancelled** | 对「重排专家缓存 profile」提案（T1）完成离线取证与判决。发现引擎专家缓存**并非静态**：`src/program/generate.cpp` 内含自适应层（每 4 轮按对话实际路由频率淘汰最冷门、调入最热门，实测一次 1600-token 运行换手 15,204 次）。用 `--dump-routing` 采集真实编码负载路由 trace（98,208 条记录 = 982,080 次查找）后离线复刻该层（交换次数误差 1.3%）：v1 静态命中率 51.1% → **运行时 75.6%**；换最优排名仅 **+0.7pt**（长会话）/ **+3.0pt**（生产典型 385 位置）；连**随机排名配自适应**也有 73.5%；完全不给 profile 反而 ≥ v1。**判决：T1 取消**（原预期 +20pt 系忽略自适应层所得）。同批修正 `bench/results/2026-09-28-coder/README.md` 中「coder profile 是出厂 48×512 排名重新索引」的错误说法（实测 Kendall tau = +0.0032，两者 top-3629 仅重合 15.0%）。**全程未触碰任何基线资产**。<br>*Forensic audit and verdict on the expert-cache profile re-ranking proposal (T1). The engine's expert cache is **not static**: `generate.cpp` carries an adaptive tier that evicts the least-routed and admits the most-routed expert every 4 rounds (15,204 swaps measured in one 1600-token run). After capturing a real coding-workload routing trace (98,208 records / 982,080 lookups) and re-implementing that tier offline (swap count matched to 1.3%): v1 static hit rate 51.1% vs **75.6% at runtime**; an oracle re-ranking adds only **+0.7pt** (long session) / **+3.0pt** (typical 385-position request); even a random ranking with the adaptive tier reaches 73.5%, and shipping no profile at all matches or beats v1. **Verdict: T1 cancelled** (the original +20pt figure omitted the adaptive tier). Also corrects the README claim that the coder profile is a re-index of the shipped 48x512 ranking (measured Kendall tau = +0.0032; top-3629 overlap only 15.0%). **No baseline asset was touched.*** |
 
 ---
 
@@ -406,6 +407,114 @@
 严格遵循项目规范治理原则，资产与文档严禁堆放于根目录，规范归档至已有系统目录：
 1. `docs/ARCADE_TANK_BATTLE_PRD.md`：街机重装坦克大战全案主设计规范书（Master GDD / PRD）。
 2. `docs/media/arcade_tank_boss.jpg`：街机决战超巨型要塞（Giga-Fortress）视觉基准参考图。
+
+---
+
+## 11. 专家缓存命中率线（T1）离线判决：取消 (Expert Cache Hit-Rate Line: Offline Verdict — Cancelled)
+
+### 11.1 结论 (Verdict)
+
+**「重排专家缓存 profile」（原 T1，曾列为头号实验）取消。**
+
+原方案的推理链是：`expert-profile-coder.bin` 只带来 ~51% 命中率，而一个用真实编码路由 trace
+训练出的最优排名可达 ~75%，因此有 **+20pt 以上**可捡。
+
+该推理**漏掉了引擎的一个核心机制**：专家缓存不是静态的。
+
+### 11.2 关键发现：引擎专家缓存带自适应层 (The Adaptive Tier)
+
+`src/program/generate.cpp`（搜注释 `Plan v0.3 P6: the VRAM tier follows the conversation`）内有一层
+**未被任何既有文档记录**的自适应机制：
+
+- **触发**：每 `adapt_every = 4` **轮**；
+- **候选**：未驻留 且 衰减使用率 `>= 2.0` 的专家；
+- **受害者**：该层**驻留中路由最少**的专家；
+- **交换条件**：`cand.usage >= vict.usage + 1.5`，每次最多 `adapt_swaps = 96` 个；
+- **衰减**：每次自适应后全部 `usage *= 0.7`；
+- **计数**：`usage` 在 `src/core/expert_source.cpp` 的池分发里对每个路由 id `+1`。
+
+日志中的 `no eviction` **只描述 profile 层**，自适应层确实会淘汰——实测一次 1600-token 运行
+换手 **15,204 次**。`--adapt-every` / `--adapt-swaps` 两个开关**未写入 `usage()`**，属未文档化参数，
+三份生产 JSON 均未设置，走默认 4 轮 / 96 次。
+
+### 11.3 实验与数据 (Experiment & Data)
+
+**采集**（`--dump-routing`，未触碰基线）：2683-token 编码 prompt（4 个 benchmark 任务 + 一道 C++ 题）
+→ prefill 1588 tok/s → 生成 1600 tokens（82.27 tok/s）→ trace **98,208 条记录
+= 48 层 × 2046 位置 × 10 专家 = 982,080 次查找**。
+
+**离线模拟自适应层**（按源码逐条复刻）：交换次数 **15,014 vs 引擎实测 15,204，误差 1.3%**，模拟可信。
+
+命中率（N = 3629 槽位，引擎严格口径——分子只含 `cache_hits`，首次入住只进分母）：
+
+| 方案 | 命中率 |
+| :--- | ---: |
+| v1 静态（原方案看到的数字） | 51.10% |
+| **v1 + 自适应（真实运行时）** | **75.59%** |
+| oracle 静态（完美排名） | 75.43% |
+| **oracle + 自适应（换 profile 的上限）** | **76.30%** |
+| 随机排名 + 自适应（对照） | 73.54% |
+| 不给 profile + 自适应（对照） | 75.94% |
+
+**会话长度扫描**（生产日志显示每次请求约 385 个 decode 位置）：
+
+| T（位置） | v1 静态 | v1+自适应 | 不给 profile | 随机+自适应 | oracle+自适应 | **oracle − v1** |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 50 | 57.29% | 60.19% | 68.70% | 37.84% | 65.45% | +5.26pt |
+| 100 | 57.46% | 64.21% | 68.05% | 45.25% | 70.80% | +6.59pt |
+| 200 | 57.73% | 69.39% | 71.05% | 53.83% | 73.74% | +4.34pt |
+| **385（生产典型）** | 56.20% | 73.15% | **74.04%** | 63.35% | 76.10% | **+2.95pt** |
+| 1000 | 55.22% | 75.02% | 75.58% | 70.98% | 76.79% | +1.77pt |
+| 2046 | 51.10% | 75.59% | **75.94%** | 73.54% | 76.67% | **+1.09pt** |
+
+**三条读法**：
+1. 自适应层把 v1 从 51.1% 抬到 75.6%，**几乎完全吃掉**了到 oracle 静态 75.4% 的全部差距；
+2. 在自适应之上换 oracle 只再拿 **+0.7pt**（长会话）～ **+3.0pt**（生产典型长度）；
+3. 一个**完全随机**的排名配自适应也有 73.5%；**完全不给 profile** 在除最短会话外处处 ≥ v1。
+
+### 11.4 判决与替代方向 (Verdict & Alternatives)
+
+**T1 取消。** 收益量级（真实请求长度 +3pt 命中率，折算约 3~5% 速度）不值得搭
+bin/json/bat 脚手架 + 真机 A/B。**顺带把 T1-2（槽位扫描）一并降级**——它原本依据的
+「12GB 卡 2,537 槽 72% vs 16GB 卡 3,793 槽 73%，槽位 +50% 命中率仅 +1pt」这一现象，
+其真正原因是**两边的自适应层各自收敛到同一负载平台**，而非「被排名卡住」。
+
+**替代头号候选**：自适应层参数扫描（`--adapt-every` / `--adapt-swaps`）。
+离线实测 `adapt_every` 由 13→4 位置有 **+2.4pt**，比换 profile 的 +0.7pt 更大；
+但需权衡其 0.167 ms/轮的拷贝成本。此项为**纯离线模拟即可判决**，零风险。
+
+### 11.5 对既有文档的更正 (Correction to Prior Documentation)
+
+`bench/results/2026-09-28-coder/README.md` 称 `data/expert-profile-coder.bin` 是
+「**the shipped 48 x 512 ranking** re-indexed」。**该说法与文件实际内容不符**：
+
+- 两 profile 排名序的 Kendall tau = **+0.0032**（「重新索引」应保持顺序，tau 应为 ±1）；
+- coder 排名**不是** base 排名的保序子序列（0/48 层单调）；
+- coder 元素在 base 排名中的位置遍布 0~471（中位 ~240），非前缀/等间隔/最小最大子集；
+- 两者 top-3629 集合**仅重合 15.0%**。
+
+该文件由原作者 Niko1221 于 `b12ab01`（2026-09-28）一次性引入、此后未再改动，
+故 README 描述的就是该文件本身。真实来源未知，但可确定**不是**简单的重新索引。
+（此更正对 T1 判决无影响——§11.3 已说明无论来源如何都没有提升空间。）
+
+### 11.6 产物与治理 (Artifacts & Governance)
+
+- **新增文档**：`docs/T1_VERDICT_2026-10-04.md`（完整判决报告，含源码证据与全部数据表）；
+  `docs/TUNING_REAUDIT_AND_PLAN_2026-10-04.md`（智商/速度再审计与方案，T1 一节已加判决框）。
+- **归档脚本**：`tools/t1_probe/`（7 个取证/分析/模拟脚本 + 2 份运行日志 + `README.md`），
+  按 §10.2 治理原则归档至既有系统目录，不堆放根目录。可直接运行复现全部数据表。
+- **`.gitignore` 变更**：新增 `/.workbuddy-ai/` 忽略项。该目录为助手本地工作区
+  （项目记忆 + 探针临时数据 + 可再生的 trace 二进制），不入版本控制；
+  其中**可复用的脚本已按上一条归档到 `tools/t1_probe/`**，不受忽略影响。
+- **未入库的大文件**：两个路由 trace 二进制（`trace_decode.bin` 8.6 MB、`trace_prompt.bin` 0.67 MB）
+  留在本地 `.workbuddy-ai/t1_probe/`，可由 `tools/t1_probe/README.md` 的命令重新生成
+  （约 3 分钟引擎时间）。`trace_prompt.bin` 本身为**废弃产物**（见下条踩坑），仅 `trace_decode.bin` 有效。
+- **基线完好**：`git diff` 对 `data/`、`strata-coder-iq1_m-256k.json`、全部 `*.bat` **均为空**；
+  实验期间引擎未以 serve 模式运行，未占用 8080 端口。
+- **踩坑记录**：`--prefill-until` 在 native IQ pack 下是**陷阱**——截断批量 prefill 后，
+  投机循环（`generate.cpp` 中 `if (native_pack) { spec_pos = pos; break; }`）**不消费剩余 prompt**，
+  模型会从「单 token 上下文」开始生成。该开关不可用于「把 prompt 送进被插桩的路径」。
+
 
 
 
