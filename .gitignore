@@ -40,13 +40,18 @@ td.log
 !/strata-coder-*.json
 /strata-*.log
 /build-strata.bat
+/build-strata-cuda12.bat
+/build-cuda12/
+/.strata-mcp/
 
 # image encoder (setup.py --vision): build output and the generated build script
 build-vision*/
 build-vision.bat
+build-vision-cuda12.bat
 
 # setup.py outputs (engine, downloads) and release builds
 /engine/
+/engine-cuda12/
 /build-release*/
 /dist/
 *.done
@@ -70,3 +75,5 @@ build-vision.bat
 # The reusable probe scripts were archived to /tools/t1_probe/ instead (see its README).
 /.workbuddy-ai/
 
+/.ccache/
+/.rocm-win/
