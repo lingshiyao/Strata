@@ -19,9 +19,9 @@ set "STRATA_SPEC_COUPLED=1"
 :: 2. Activate Windows High Performance Power Scheme
 powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c >nul 2>&1
 
-:: 3. Select Reasoning Prompt Mode (Default to Mode 2 if timeout or auto)
+:: 3. Select Reasoning Prompt Mode (Default to Mode 2 in 3s)
 echo ============================================================
-echo   Select Strata Reasoning System Prompt Mode:
+echo   [1/2] Select Strata Reasoning System Prompt Mode:
 echo   [1] Original High (阿里原生无约束深思 - 极限版本)
 echo   [2] Optimized High (防草稿纸影子编码 - 甜蜜点完全体)
 echo ============================================================
@@ -32,16 +32,69 @@ if errorlevel 1 goto :mode1
 :mode1
 echo Activating Mode 1: Original Raw Prompt...
 copy /y "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja.raw" "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja" >nul
-goto :start_server
+goto :select_budget
 
 :mode2
 echo Activating Mode 2: Optimized Battle-Tested Prompt...
 copy /y "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja.opt" "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja" >nul
+goto :select_budget
+
+:select_budget
+echo.
+echo ============================================================
+echo   [2/2] Select Thinking Budget (思考预算，1024 整数倍):
+echo   [1] 16K (16,384 tokens - 敏捷推荐 / 默认)
+echo   [2] 32K (32,768 tokens - 深度架构推演)
+echo   [3] 48K (49,152 tokens - 超大工程推演)
+echo   [4] 64K (65,536 tokens - 极限界限深度思考)
+echo   [5] Custom 自定义 (手动输入 K 数，自动转换为 1024 倍数)
+echo ============================================================
+choice /c 12345 /n /t 3 /d 1 /m "Select budget [1-5] (Default 1 [16K] in 3s): "
+if errorlevel 5 goto :budget_custom
+if errorlevel 4 goto :budget_64k
+if errorlevel 3 goto :budget_48k
+if errorlevel 2 goto :budget_32k
+if errorlevel 1 goto :budget_16k
+
+:budget_16k
+set "BUDGET_TOKENS=16384"
+set "BUDGET_NAME=16K (16,384 tokens)"
+goto :start_server
+
+:budget_32k
+set "BUDGET_TOKENS=32768"
+set "BUDGET_NAME=32K (32,768 tokens)"
+goto :start_server
+
+:budget_48k
+set "BUDGET_TOKENS=49152"
+set "BUDGET_NAME=48K (49,152 tokens)"
+goto :start_server
+
+:budget_64k
+set "BUDGET_TOKENS=65536"
+set "BUDGET_NAME=64K (65,536 tokens)"
+goto :start_server
+
+:budget_custom
+set /p USER_K="请输入思考预算 K 数 (例如输入 24 代表 24K, 80 代表 80K): "
+set /a BUDGET_TOKENS=USER_K * 1024
+if %BUDGET_TOKENS% LEQ 0 (
+    echo 输入无效，自动回退到 16K (16,384 tokens)...
+    set "BUDGET_TOKENS=16384"
+    set "BUDGET_NAME=16K (16,384 tokens)"
+) else (
+    set "BUDGET_NAME=%USER_K%K (%BUDGET_TOKENS% tokens)"
+)
 goto :start_server
 
 :start_server
-echo Launching Strata Engine...
-"D:\Strata\.venv\Scripts\python.exe" "D:\Strata\serve\server.py" --engine strata --config "D:\Strata\strata-coder-iq1_m-ultra.json" --port 8080 --open
+echo.
+echo ============================================================
+echo   Thinking Budget : %BUDGET_NAME%
+echo   Launching Strata Engine...
+echo ============================================================
+"D:\Strata\.venv\Scripts\python.exe" "D:\Strata\serve\server.py" --engine strata --config "D:\Strata\strata-coder-iq1_m-ultra.json" --reasoning-budget-tokens %BUDGET_TOKENS% --port 8080 --open
 taskkill /F /IM strata.exe >nul 2>&1
 taskkill /F /IM strata-vision.exe >nul 2>&1
 if errorlevel 1 pause

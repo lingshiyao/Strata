@@ -3944,8 +3944,18 @@ def main() -> int:
                          "\"min_free_vram_mib\" in the config; default: always load)")
     ap.add_argument("--before-load", help="a command run before the model is loaded again (e.g. to unload another "
                                           "server's model; also \"before_load\" in the config, a string or a list)")
+    ap.add_argument("--reasoning-budget-tokens", type=int, default=None, metavar="TOKENS",
+                    help="default thinking budget for requests (tokens, e.g. 16384, 32768, 49152, 65536; 0: no budget); "
+                         "overrides config and $STRATA_REASONING_BUDGET")
     a = ap.parse_args()
     cfg = json.loads(Path(a.config).read_text(encoding="utf-8-sig")) if a.config else {}   # Notepad adds a BOM
+    if a.reasoning_budget_tokens is not None:
+        cfg["reasoning_budget_tokens"] = a.reasoning_budget_tokens
+    elif os.environ.get("STRATA_REASONING_BUDGET"):
+        try:
+            cfg["reasoning_budget_tokens"] = int(os.environ["STRATA_REASONING_BUDGET"])
+        except ValueError:
+            pass
     if a.gpu is not None:
         cfg["gpu"] = int(a.gpu) if a.gpu.strip().isdigit() else a.gpu
     a.host = a.host or cfg.get("host") or "127.0.0.1"   # issue #26: the run scripts pass no --host, the config can
