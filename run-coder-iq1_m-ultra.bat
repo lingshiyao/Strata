@@ -4,7 +4,7 @@ setlocal EnableExtensions
 title Strata Qwen3.8 Coder IQ1_M - 256K Ultra (High Performance Multimodal)
 cd /d "D:\Strata"
 
-:: 0. Clean up any lingering engine processes and release VRAM/RAM
+REM 0. Clean up any lingering engine processes and release VRAM/RAM
 tasklist /FI "IMAGENAME eq strata.exe" 2>nul | find /I /N "strata.exe" >nul
 if not errorlevel 1 (
     echo Cleaning up lingering engine instance to release VRAM...
@@ -13,13 +13,13 @@ if not errorlevel 1 (
     timeout /t 2 /nobreak >nul
 )
 
-:: 1. Enable Coupled Stochastic Speculative Drafting
+REM 1. Enable Coupled Stochastic Speculative Drafting
 set "STRATA_SPEC_COUPLED=1"
 
-:: 2. Activate Windows High Performance Power Scheme
+REM 2. Activate Windows High Performance Power Scheme
 powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c >nul 2>&1
 
-:: 3. Select Reasoning Prompt Mode (Default to Mode 2 in 3s)
+REM 3. Select Reasoning Prompt Mode (Default to Mode 2 in 3s)
 echo ============================================================
 echo   [1/2] Select Strata Reasoning System Prompt Mode:
 echo   [1] Original High (阿里原生无约束深思 - 极限版本)
@@ -58,33 +58,33 @@ if errorlevel 1 goto :budget_16k
 
 :budget_16k
 set "BUDGET_TOKENS=16384"
-set "BUDGET_NAME=16K (16,384 tokens)"
+set "BUDGET_NAME=16K [16,384 tokens]"
 goto :start_server
 
 :budget_32k
 set "BUDGET_TOKENS=32768"
-set "BUDGET_NAME=32K (32,768 tokens)"
+set "BUDGET_NAME=32K [32,768 tokens]"
 goto :start_server
 
 :budget_48k
 set "BUDGET_TOKENS=49152"
-set "BUDGET_NAME=48K (49,152 tokens)"
+set "BUDGET_NAME=48K [49,152 tokens]"
 goto :start_server
 
 :budget_64k
 set "BUDGET_TOKENS=65536"
-set "BUDGET_NAME=64K (65,536 tokens)"
+set "BUDGET_NAME=64K [65,536 tokens]"
 goto :start_server
 
 :budget_custom
 set /p USER_K="请输入思考预算 K 数 (例如输入 24 代表 24K, 80 代表 80K): "
 set /a BUDGET_TOKENS=USER_K * 1024
 if %BUDGET_TOKENS% LEQ 0 (
-    echo 输入无效，自动回退到 16K (16,384 tokens)...
+    echo 输入无效，自动回退到 16K [16,384 tokens]...
     set "BUDGET_TOKENS=16384"
-    set "BUDGET_NAME=16K (16,384 tokens)"
+    set "BUDGET_NAME=16K [16,384 tokens]"
 ) else (
-    set "BUDGET_NAME=%USER_K%K (%BUDGET_TOKENS% tokens)"
+    set "BUDGET_NAME=%USER_K%K [%BUDGET_TOKENS% tokens]"
 )
 goto :start_server
 
