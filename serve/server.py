@@ -75,7 +75,9 @@ VISION_START = "<|vision_start|>"
 # sets it; 0 turns it off.
 REPEAT_STOP_TOKENS = 256
 # #123: what closes the thinking when it reaches reasoning_budget_tokens (the model's own end-of-thinking tag after it)
-REASONING_WRAP_UP = "\n\nI have thought about this long enough; time to give my answer.\n</think>\n\n"
+WRAP_UP_ORIGINAL = "\n\nI have thought about this long enough; time to give my answer.\n</think>\n\n"
+WRAP_UP_SYSTEM = "\n\n[System: Thinking budget reached. Conclude reasoning immediately and deliver the response based on current analysis.]\n</think>\n\n"
+REASONING_WRAP_UP = WRAP_UP_ORIGINAL
 LOOPBACK_NAMES = ("localhost", "127.0.0.1", "::1")
 CTX_SLACK = 8               # `strata --serve` rejects prompt + max_new + 8 > context: keep the same margin here
 # The live tok/s is a rate over a window, not a mean since the first token: a mean reads ~1/elapsed at the first
@@ -1704,6 +1706,7 @@ class Service:
         self.before_load = None
         self.vram_reserve = None                         # #533: the last POST /v1/vram reserve (None: the start's)
         self.reasoning_budget_tokens = 0                 # #123: the config's default thinking budget (0: none)
+        self.reasoning_wrap_up = REASONING_WRAP_UP
         self.repeat_stop_tokens = REPEAT_STOP_TOKENS     # #606: one token this many times in a row ends a reply (0: off)
         self.anthropic_think_unasked = True               # #278: "anthropic_thinking": "on_request" -> False
         self.stop_ids = set(tokenizer.encode(IM_END, parse_special=True) +
@@ -2359,7 +2362,7 @@ class Service:
                         # short wrap-up and </think>) and let it answer: the next pass's prompt is this one plus what
                         # was generated plus the wrap-up, so the engine continues from the prefix it already holds.
                         budget = None
-                        extra = self.tok.encode(REASONING_WRAP_UP, parse_special=True)
+                        extra = self.tok.encode(self.reasoning_wrap_up, parse_special=True)
                         if max_new - n - len(extra) < 1:
                             break                       # no room left to answer: "length", as without a budget
                         print(f"[strata] thinking budget reached ({thought} tokens): wrapping up the thinking",
@@ -3949,6 +3952,9 @@ def main() -> int:
                          "overrides config and $STRATA_REASONING_BUDGET")
     ap.add_argument("--reasoning-effort", choices=["none", "low", "medium", "high", "xhigh"], default=None,
                     help="default reasoning effort (none, low, medium, high, xhigh); sets default for requests")
+    ap.add_argument("--reasoning-wrap-up", choices=["original", "system"], default=None,
+                    help="style of closing thinking when budget is reached: "
+                         "'original' (impersonation), 'system' (objective system notice)")
     a = ap.parse_args()
     cfg = json.loads(Path(a.config).read_text(encoding="utf-8-sig")) if a.config else {}   # Notepad adds a BOM
     if a.reasoning_budget_tokens is not None:
@@ -4092,6 +4098,12 @@ def main() -> int:
         if budget:
             print(f"[strata] thinking budget: {budget} tokens (reasoning_budget_tokens; a request can set its own)",
                   flush=True)
+    wrap_style = a.reasoning_wrap_up or os.environ.get("STRATA_REASONING_WRAP_UP") or cfg.get("reasoning_wrap_up", "original")
+    if wrap_style == "system":
+        svc.reasoning_wrap_up = WRAP_UP_SYSTEM
+        print("[strata] thinking wrap-up style: system (objective notice)", flush=True)
+    else:
+        svc.reasoning_wrap_up = WRAP_UP_ORIGINAL
     svc.gpu_index = (gpu_list(cfg) or [0])[0]           # the Monitor reads the card the engine runs on (issue #51)
     svc.gpu_indices = gpu_list(cfg)                     # ... or every card of a layer split (issue #112)
     svc.backend = cfg.get("backend")                    # "hip": the AMD cards' readings come from sysfs (#301)
