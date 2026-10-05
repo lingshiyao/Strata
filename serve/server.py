@@ -3947,6 +3947,8 @@ def main() -> int:
     ap.add_argument("--reasoning-budget-tokens", type=int, default=None, metavar="TOKENS",
                     help="default thinking budget for requests (tokens, e.g. 16384, 32768, 49152, 65536; 0: no budget); "
                          "overrides config and $STRATA_REASONING_BUDGET")
+    ap.add_argument("--reasoning-effort", choices=["none", "low", "medium", "high", "xhigh"], default=None,
+                    help="default reasoning effort (none, low, medium, high, xhigh); sets default for requests")
     a = ap.parse_args()
     cfg = json.loads(Path(a.config).read_text(encoding="utf-8-sig")) if a.config else {}   # Notepad adds a BOM
     if a.reasoning_budget_tokens is not None:
@@ -4104,6 +4106,10 @@ def main() -> int:
                       ", ".join(f"{k}={v}" for k, v in svc.shared.items()), flush=True)
         except (OSError, ValueError):
             svc.shared = {}
+    if a.reasoning_effort:
+        effort_val = "high" if a.reasoning_effort in ("high", "xhigh") else a.reasoning_effort
+        svc.shared["reasoning_effort"] = effort_val
+        print(f"[strata] reasoning effort override: reasoning_effort={effort_val}", flush=True)
     if hub is not None:
         import atexit
         svc.mcp = hub
