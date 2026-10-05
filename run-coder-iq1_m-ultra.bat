@@ -61,17 +61,17 @@ goto :select_budget
 echo.
 echo ============================================================
 echo   [2/2] Select Thinking Budget (1024 Multiples):
-echo   [1] 0.5K (512 tokens)   - 极速微思考
-echo   [2] 1K   (1024 tokens)  - 极轻量思考
-echo   [3] 2K   (2048 tokens)  - 快速单点逻辑
-echo   [4] 4K   (4096 tokens)  - 标准敏捷编码
-echo   [5] 6K   (6144 tokens)  - 进阶敏捷设计
-echo   [6] 8K   (8192 tokens)  - 完整系统规划
-echo   [7] 16K  (16384 tokens) - 甜蜜点黄金推荐 [推荐]
-echo   [8] 32K  (32768 tokens) - 深度架构推演
-echo   [9] 48K  (49152 tokens) - 超大工程推演
-echo   [A] 64K  (65536 tokens) - 极限界限深度思考
-echo   [C] Custom Tokens       - 自定义输入 (手动输入 K 数 x 1024)
+echo   [1] 0.5K (512 tokens)   - 极速微思考 [Micro]
+echo   [2] 1K   (1024 tokens)  - 极轻量思考 [Ultra Light]
+echo   [3] 2K   (2048 tokens)  - 快速单点逻辑 [Fast Logic]
+echo   [4] 4K   (4096 tokens)  - 标准敏捷编码 [Standard]
+echo   [5] 6K   (6144 tokens)  - 进阶敏捷设计 [Advanced]
+echo   [6] 8K   (8192 tokens)  - 完整系统规划 [Architecture]
+echo   [7] 16K  (16384 tokens) - 甜蜜点黄金推荐 [Recommended]
+echo   [8] 32K  (32768 tokens) - 深度架构推演 [Deep]
+echo   [9] 48K  (49152 tokens) - 超大工程推演 [Large Project]
+echo   [A] 64K  (65536 tokens) - 极限界限深度思考 [Extreme]
+echo   [C] Custom Tokens       - 自定义输入 (手动输入 K 数 x 1024) [Custom]
 echo ============================================================
 choice /c 123456789AC /m "Select budget [1-9, A, C]: "
 if errorlevel 11 goto :budget_custom
