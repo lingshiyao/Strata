@@ -4,6 +4,15 @@ setlocal EnableExtensions
 title Strata Qwen3.8 Coder IQ1_M - 256K Ultra (High Performance Multimodal)
 cd /d "D:\Strata"
 
+:: 0. Clean up any lingering engine processes and release VRAM/RAM
+tasklist /FI "IMAGENAME eq strata.exe" 2>nul | find /I /N "strata.exe" >nul
+if not errorlevel 1 (
+    echo Cleaning up lingering engine instance to release VRAM...
+    taskkill /F /IM strata.exe >nul 2>&1
+    taskkill /F /IM strata-vision.exe >nul 2>&1
+    timeout /t 2 /nobreak >nul
+)
+
 :: 1. Enable Coupled Stochastic Speculative Drafting
 set "STRATA_SPEC_COUPLED=1"
 
@@ -33,4 +42,6 @@ goto :start_server
 :start_server
 echo Launching Strata Engine...
 "D:\Strata\.venv\Scripts\python.exe" "D:\Strata\serve\server.py" --engine strata --config "D:\Strata\strata-coder-iq1_m-ultra.json" --port 8080 --open
+taskkill /F /IM strata.exe >nul 2>&1
+taskkill /F /IM strata-vision.exe >nul 2>&1
 if errorlevel 1 pause
