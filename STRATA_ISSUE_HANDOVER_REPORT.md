@@ -871,5 +871,7 @@ wrap_up = "\n\n[System: Thinking budget reached. Conclude reasoning immediately 
 
 * **CRLF 强制换行**：Windows `cmd.exe` 在解析包含中文字符的批处理文件时，若遇到纯 Unix LF (`\n`) 极易发生命令拆分错误；本批次通过专用生成器 `tools/generate_ultra_bat.py` 强制保证全量 `\r\n` (CRLF)；
 * **ASCII 行尾守卫 (ASCII Line-Ending Rule)**：无论系统处于 CP936 还是 UTF-8 (CP65001)，所有包含中文的 `echo` 行尾均通过 ASCII 标签（如 `[Original]`, `[Staged Nudge]`）或空格保护，彻底杜绝 Windows CMD 吞噬回车符（`\r`）的底层解析缺陷；
-* **特殊字符转义**：严格转义 `^&`、`^<think^>`、`^</think^>`，保证在任意 Windows 终端中执行零报错。
+* **特殊字符转义**：严格转义 `^&`、`^<think^>`、`^</think^>`，保证在任意 Windows 终端中执行零报错；
+* **Jinja2 单引号转义防御 (Jinja2 String Escaping)**：在 `chat_template.jinja.nudge` 的单引号字符串字面量中，将内部的 `'[Thinking Nudge]'` 严格转义为 `\'[Thinking Nudge]\'`，彻底消除 Jinja2 模板解析器将单引号闭合后误判为切片索引（`TemplateSyntaxError: expected token ',', got 'Nudge'`）的报错。
+
 
