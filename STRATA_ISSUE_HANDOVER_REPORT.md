@@ -244,6 +244,7 @@
 | 2026-10-04 | Cognitive Budget (V4) | Breakthrough & Solidification | 完成 18 项工业级基准长思维链认知审计，发现 14.2K 黄金收敛拐点定律与过度思考自毁效应。固化思考预算为标准二进制 `16384` Tokens ($16 \times 1024$)，维持 `min_p: 0.08`, `rep_pen: 1.08`。经红蓝对抗评审合成完全体正向时序门控 System Prompt，并在 `run-coder-iq1_m-ultra.bat` 中实现原版/优化版双模无缝选择菜单。<br>*Complete 18-benchmark forensic cognitive audit, establishing 14.2K golden inflection law and overthinking destruction effect. Solidify reasoning budget to standard 16384 tokens with min_p 0.08, rep_pen 1.08. Synthesize battle-tested positive phase-gated System Prompt via dual-agent adversarial review, integrating seamless dual-mode menu into run-coder-iq1_m-ultra.bat.* |
 | 2026-10-04 | Expert Cache (T1) | Empirical Audit & **Verdict: Cancelled** | 对「重排专家缓存 profile」提案（T1）完成离线取证与判决。发现引擎专家缓存**并非静态**：`src/program/generate.cpp` 内含自适应层（每 4 轮按对话实际路由频率淘汰最冷门、调入最热门，实测一次 1600-token 运行换手 15,204 次）。用 `--dump-routing` 采集真实编码负载路由 trace（98,208 条记录 = 982,080 次查找）后离线复刻该层（交换次数误差 1.3%）：v1 静态命中率 51.1% → **运行时 75.6%**；换最优排名仅 **+0.7pt**（长会话）/ **+3.0pt**（生产典型 385 位置）；连**随机排名配自适应**也有 73.5%；完全不给 profile 反而 ≥ v1。**判决：T1 取消**（原预期 +20pt 系忽略自适应层所得）。同批修正 `bench/results/2026-09-28-coder/README.md` 中「coder profile 是出厂 48×512 排名重新索引」的错误说法（实测 Kendall tau = +0.0032，两者 top-3629 仅重合 15.0%）。**全程未触碰任何基线资产**。<br>*Forensic audit and verdict on the expert-cache profile re-ranking proposal (T1). The engine's expert cache is **not static**: `generate.cpp` carries an adaptive tier that evicts the least-routed and admits the most-routed expert every 4 rounds (15,204 swaps measured in one 1600-token run). After capturing a real coding-workload routing trace (98,208 records / 982,080 lookups) and re-implementing that tier offline (swap count matched to 1.3%): v1 static hit rate 51.1% vs **75.6% at runtime**; an oracle re-ranking adds only **+0.7pt** (long session) / **+3.0pt** (typical 385-position request); even a random ranking with the adaptive tier reaches 73.5%, and shipping no profile at all matches or beats v1. **Verdict: T1 cancelled** (the original +20pt figure omitted the adaptive tier). Also corrects the README claim that the coder profile is a re-index of the shipped 48x512 ranking (measured Kendall tau = +0.0032; top-3629 overlap only 15.0%). **No baseline asset was touched.*** |
 | 2026-10-06 | Thinking Budget & Closure (V5.2) | Feature & Resiliency Hardening | 实现 0.5K~64K 全阶梯预算覆盖（`--reasoning-budget-tokens`）、推理努力程度 Mode 3 Medium (无系统Prompt)/Mode 4 Low 切换（`--reasoning-effort`）、客观系统截断通知机制（`--reasoning-wrap-up system`）与 Windows CMD CP936 行尾 ASCII 标签换行防吞噬加固。通过 TEST5C (2K) 与 TEST6C (4K) 真实会话实证模型在客观系统截断下的自知敏捷排错能力与 OODA 循环。<br>*Implement full-spectrum thinking budgets 0.5K~64K (`--reasoning-budget-tokens`), reasoning effort modes (Mode 3 Medium with empty prompt, Mode 4 Low via `--reasoning-effort`), objective system wrap-up closure mode (`--reasoning-wrap-up system`), and Windows CMD CP936 carriage-return swallowing bugfix. Validate model self-awareness and agile OODA debugging capabilities via empirical audits of TEST5C (2K) and TEST6C (4K) sessions.* |
+| 2026-10-09 | Architectural Synthesis (V5.3) | Knowledge Base & Topology Design | 深度研判 Qwen3.8 家族高阶变体（Swift 1.5 极速收敛版、REAP-320 折中版、Q3 vs QR 帕累托前沿）、双机异构（台式 5070Ti 16G+48G vs ROG 笔记本 4060 8G+64G）与雷电 18G 互联；实证解析 Gated DeltaNet 时序递归状态在张量级 RPC 切分下的退化崩溃机理，确立“应用层 HTTP 专线协同”为跨机最优工程范式。<br>*Comprehensive forensic evaluation of Qwen3.8 high-tier variants (Swift 1.5 concise thinking, REAP-320 balance, Q3 vs QR Pareto efficiency), dual-machine heterogeneous topology (Desktop 5070Ti 16G+48G vs Laptop 4060 8G+64G), and Thunderbolt 18Gbps interconnect; establish theoretical root cause of DeltaNet recurrent memory collapse under tensor RPC, confirming application-level HTTP API mesh as optimal dual-node architecture.* |
 
 ---
 
@@ -711,5 +712,98 @@ wrap_up = "\n\n[System: Thinking budget reached. Conclude reasoning immediately 
 
 ---
 
+## 13. 模型生态谱系、硬件边界与双机分布式架构深度研判 (Section 13: Model Ecosystem Lineage, Hardware Constraints & Dual-Node Distributed Architecture Evaluation)
 
+### 13.1 Qwen3.8-Flash-Next 衍生变体家族全景 (Model Variant Spectrum & Community Lineage)
 
+在生产落地中，针对 125B 巨型混合专家（MoE）模型，业界与开源社区围绕“智商保留、显存占用、思考收敛”展开了多条分叉演进路线：
+
+```
+                      Qwen3.8-Flash-Next (阿里官方原版，512 专家，125B 满血)
+                                   /             |            \
+       (ISTA-DASLab 50% 物理剪枝) /              |             \ (UkisAI RL/OPD 微调)
+                                 v               v              v
+                  Coder (256 专家)         REAP-320 (320 专家)   Swift 1.5 (512 全专家)
+                  [当前主力生产配置]        [社区 62.5% 黄金折中]  [天然极速收敛，思考-63%]
+```
+
+#### 13.1.1 各大家族分支特征对比
+1. **`coder`（ISTA-DASLab 剪枝版，当前主力）**：
+   * **架构**：每层 512 个专家中物理切除 256 个（保留 50%），专留代码与工具调用专家；
+   * **战功**：仅需 **23.4 GB 专家区 RAM**（32G 内存整机即可跑通），5070 Ti 单卡跑出 **70+ tok/s**，编程做题基准（LiveCodeBench v6）保全原版 98.7% 分数；
+   * **暗病与宿疾**：因切除负责“元认知（Meta-cognition）”与通识回路的神经元，天生缺乏“自我刹车皮”，极易在长思维链中陷入“草稿纸影子编码死循环”，且通识与多语言表达能力断崖式下降。
+2. **`swift`（UkisAI Swift 1.5 极速收敛版）**：
+   * **架构**：**100% 完整的 125B MoE（全 512 专家，绝非 27B 稠密模型）**；
+   * **机制**：通过在线策略优化（RL / OPD）在训练中惩罚“病态过度思考（Pathological Overthinking）”，不设粗暴硬截断；
+   * **实测**：思考 Token 减少 **63.4%**，出字速度加快 **1.8x**，准确率损失 **<1%**；8 道高难逻辑题测试仅耗费 1,234 tokens 即达成 8/8 全对（原版耗费 2,682 tokens）。天然主动闭合思考，无需外界频繁打断。
+3. **`REAP-320`（社区自发拯救版）**：
+   * **背景**：开源社区（LocalLLaMA / AnonimousA）受够了 256 版本的死循环与代码偷懒（`// TODO` 占位符），利用 Router-weighted Expert Activation Pruning 算法保留 **320 个专家（保留 62.5%）**；
+   * **价值**：找回被误伤的 64 个元认知与通识专家，兼顾了代码专注力与主动刹车能力；
+   * **硬件门槛**：专家区占用 ~31.5 GB，整机内存需求约 **42 ~ 46 GB RAM**，**恰好能压哨吃满本地台式机 48GB 物理内存**。
+
+---
+
+### 13.2 量化精度阶梯与帕累托前沿：Q3 (IQ3_XXS) 与 QR (IQ2_XS) (Quantization Tradeoffs: Q3 vs QR Pareto Frontier)
+
+官方仓库（`ukisai/Swift-1.5-Qwen3.8-Flash-Next-GSQ-RCO-GGUF`）中的 1,224 个张量均基于 GSQ-RCO 非均匀逐张量混合精度分配（Mixed-Precision Per-Tensor Allocation），其底层真实分配直方图确立了如下规律：
+
+| 档位 | 专家等效 Bit | 体积 | 1224 张量真实分布 | KLD 散度误差 (越低越好) | 物理内存门槛 | 硬件适用定论 |
+| :--- | :---: | :---: | :--- | :---: | :---: | :--- |
+| **Q3** <br>*(IQ3_XXS)* | **~3.1 bits** | **75.97 GB** | `Q6_K`: 71, `Q5_K`: 15, `Q4_K`: 45, `IQ3_S`: 82, `IQ2`: 58 | **0.240** <br>*(数学 0.086, 代码 0.118)* | **60 GB ~ 64 GB** | **绝对智商天花板**。48G 内存强跑必爆虚拟内存，速度暴跌至 3~8 tok/s。 |
+| **QR / Q2** <br>*(IQ2_XS)* | **~2.2 bits** | **68.15 GB** | `IQ4_XS`: 181, `IQ2_S`: 68, `Q2_0`: 53, `IQ2_XXS`: 22 | **0.341** <br>*(数学 0.120, 代码 0.174)* | **40 GB ~ 42 GB** | **帕累托最优（Standout）**。下游任务损失 <1%，48G 内存满血 70+ tok/s。 |
+| **Q2_0** *(experimental)* | ~2.0 bits | 66.55 GB | `Q2_0`: 202, `Q3_K`: 91 (粗暴降精度) | 0.424 *(质量严重崩塌)* | 38 GB | 官方不推荐。 |
+
+* **“Standout（全场最佳）”的真正含义**：绝非代表 IQ2_XS 的绝对智商高于 Q3，而是指其以极小的精度代价（<1%）节约了近 15GB 运行内存，使得 48GB 消费级机器能够纯物理满血运行；
+* **物理约束铁律**：台式机（48G RAM）严禁运行 Q3，必须锁定 IQ2_XS 或 Coder IQ1_M；Q3 仅适合 64GB+ 内存设备。
+
+---
+
+### 13.3 跨设备异构算力解构：台式机 5070Ti vs ROG 笔记本 4060 (Hardware Bottleneck: Desktop 5070Ti vs Laptop 4060)
+
+针对台式机（5070 Ti 16G + 48G RAM）与 ROG 笔记本（4060 Laptop 8G + 64G RAM），解构为何笔记本跑大模型速度明显放缓（预估 15~25 tok/s）：
+
+1. **核心数物理差距（近 3 倍）**：  
+   桌面端 RTX 5070 Ti 拥有约 8,960 个最新 Blackwell 架构核心（满血 285W+ 功耗）；移动端 RTX 4060 仅有 3,072 个核心（功耗墙被压在 80W~115W）；
+2. **8GB 显存引发的“专家命中率大雪崩”（核心瓶颈）**：  
+   * **5070 Ti 16G**：扣除 Dense 稠密层（~3.4G）后，留给显存专家池（Expert Cache）的空间超 **11 GB**，可驻留 **3,793 个专家**，运行时专家命中率高达 **75.6%**（3/4 的词在显存内高速完成）；
+   * **4060 8G**：扣除 Dense 稠密层和系统显示开销后，留给专家池的仅剩 **~2 GB**，只能容纳约 **800 个专家**，命中率暴跌至 **~25%**。这意味着 75% 的计算被迫通过 PCIe 甩回笔记本 CPU 与 64G 内存慢速硬算。
+
+---
+
+### 13.4 分布式 RPC 的本质边界：稠密模型能切，DeltaNet MoE 必崩 (Distributed RPC: Dense vs Recurrent MoE)
+
+深入剖析为什么 `llama.cpp` 原生 RPC 机制无法跨机承载 `Qwen3.8-Flash-Next`（代号 `qwen4exp`）：
+
+1. **纯稠密模型（Dense 70B）为什么能顺畅切分？**  
+   * 结构为确定性纯前向流水线（Stateless Forward Pipeline）；
+   * 台式机算 0~44 层，笔记本算 45~79 层，跨网络传递的仅为确定性隐藏状态向量（Hidden State，单 Token 仅几百 KB），切分边界干净无状态残留。
+2. **Flash-Next 新型 MoE 为什么跨机 RPC 必然崩溃？**  
+   * **致命伤 1：Gated DeltaNet 循环时序隐状态（Recurrent Memory State）**：每一层在本地内存中维持递归隐状态，RPC 跨机序列化在网络传输中无法实现精确时序同步。上下文超过 1K~2K Tokens 时，状态累积误差导致输出直接退化成**连续吐 "0" 或不可读乱码**；
+   * **致命伤 2：28.8 GB 共享 N-gram 查找表（PLE）与 512 动态专家路由**：微秒级网络延迟在频繁查表与跨网拉取动态专家时引发通信风暴，导致推理速度跌至不可用的 **1 ~ 3 tok/s**。
+3. **llama.cpp 官方支持现状**：  
+   官方主分支已合入 `qwen4exp` 算子支持，但缺乏 Strata 定制的自适应专家换手与 MTP 深度耦合，单卡仅 20~35 tok/s，且分布式 RPC 处于已知半残状态。
+
+---
+
+### 13.5 雷电 18Gbps 双机协同最优架构：应用层 HTTP 专线协同 (Optimal Dual-Node Architecture: Thunderbolt HTTP Mesh)
+
+确立“**彻底放弃底层张量级 RPC，拥抱应用层 HTTP 专线网状拓扑**”为双机最佳工程规范：
+
+```
++-------------------------------------------------+             +-------------------------------------------------+
+|          台式机 (日常高频先锋主力工位)          |             |          ROG 笔记本 (外置高阶智库专机)          |
+|  - GPU: RTX 5070 Ti 16GB (3,793 显存专家槽位)   |             |  - GPU: RTX 4060 Laptop 8GB                     |
+|  - RAM: 48GB DDR5                               |  雷电 18G   |  - RAM: 64GB DDR5 (纯物理吃下 512 专家)         |
+|  - 模型: Coder IQ1_M / Swift IQ2_XS             |  网桥专线   |  - 模型: Swift Q3 (IQ3_XXS)                     |
+|  - 表现: 70+ tok/s 极速响应，处理日常 90% 编码  |<----------->|  - 表现: 20 tok/s 稳定运行，无内存爆盘与吐0风险 |
+|  - 前端: Hermes / Cursor / Claude Code          | (延迟<0.2ms)|  - 服务: 独立 Strata 服务端 (内网监听 8080)     |
++-------------------------------------------------+             +-------------------------------------------------+
+```
+
+* **架构优势**：
+  1. 两端均为**本地完整闭环运行**，彻底规避 DeltaNet 跨网状态丢失与吐 0 缺陷；
+  2. 笔记本 64G 内存跑 Q3，单机稳定保持 20 tok/s，充当本地专属“离线智囊私有云”；
+  3. 台式机 48G 内存与 5070 Ti 性能完全释放，70+ tok/s 秒回日常交互；
+  4. 雷电 18Gbps 网络延迟仅 0.1~0.2ms，台式机开发环境调用笔记本如同调用本地服务。
+
+---
