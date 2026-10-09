@@ -245,8 +245,10 @@
 | 2026-10-04 | Expert Cache (T1) | Empirical Audit & **Verdict: Cancelled** | 对「重排专家缓存 profile」提案（T1）完成离线取证与判决。发现引擎专家缓存**并非静态**：`src/program/generate.cpp` 内含自适应层（每 4 轮按对话实际路由频率淘汰最冷门、调入最热门，实测一次 1600-token 运行换手 15,204 次）。用 `--dump-routing` 采集真实编码负载路由 trace（98,208 条记录 = 982,080 次查找）后离线复刻该层（交换次数误差 1.3%）：v1 静态命中率 51.1% → **运行时 75.6%**；换最优排名仅 **+0.7pt**（长会话）/ **+3.0pt**（生产典型 385 位置）；连**随机排名配自适应**也有 73.5%；完全不给 profile 反而 ≥ v1。**判决：T1 取消**（原预期 +20pt 系忽略自适应层所得）。同批修正 `bench/results/2026-09-28-coder/README.md` 中「coder profile 是出厂 48×512 排名重新索引」的错误说法（实测 Kendall tau = +0.0032，两者 top-3629 仅重合 15.0%）。**全程未触碰任何基线资产**。<br>*Forensic audit and verdict on the expert-cache profile re-ranking proposal (T1). The engine's expert cache is **not static**: `generate.cpp` carries an adaptive tier that evicts the least-routed and admits the most-routed expert every 4 rounds (15,204 swaps measured in one 1600-token run). After capturing a real coding-workload routing trace (98,208 records / 982,080 lookups) and re-implementing that tier offline (swap count matched to 1.3%): v1 static hit rate 51.1% vs **75.6% at runtime**; an oracle re-ranking adds only **+0.7pt** (long session) / **+3.0pt** (typical 385-position request); even a random ranking with the adaptive tier reaches 73.5%, and shipping no profile at all matches or beats v1. **Verdict: T1 cancelled** (the original +20pt figure omitted the adaptive tier). Also corrects the README claim that the coder profile is a re-index of the shipped 48x512 ranking (measured Kendall tau = +0.0032; top-3629 overlap only 15.0%). **No baseline asset was touched.*** |
 | 2026-10-06 | Thinking Budget & Closure (V5.2) | Feature & Resiliency Hardening | 实现 0.5K~64K 全阶梯预算覆盖（`--reasoning-budget-tokens`）、推理努力程度 Mode 3 Medium (无系统Prompt)/Mode 4 Low 切换（`--reasoning-effort`）、客观系统截断通知机制（`--reasoning-wrap-up system`）与 Windows CMD CP936 行尾 ASCII 标签换行防吞噬加固。通过 TEST5C (2K) 与 TEST6C (4K) 真实会话实证模型在客观系统截断下的自知敏捷排错能力与 OODA 循环。<br>*Implement full-spectrum thinking budgets 0.5K~64K (`--reasoning-budget-tokens`), reasoning effort modes (Mode 3 Medium with empty prompt, Mode 4 Low via `--reasoning-effort`), objective system wrap-up closure mode (`--reasoning-wrap-up system`), and Windows CMD CP936 carriage-return swallowing bugfix. Validate model self-awareness and agile OODA debugging capabilities via empirical audits of TEST5C (2K) and TEST6C (4K) sessions.* |
 | 2026-10-09 | Architectural Synthesis (V5.3) | Knowledge Base & Topology Design | 深度研判 Qwen3.8 家族高阶变体（Swift 1.5 极速收敛版、REAP-320 折中版、Q3 vs QR 帕累托前沿）、双机异构（台式 5070Ti 16G+48G vs ROG 笔记本 4060 8G+64G）与雷电 18G 互联；实证解析 Gated DeltaNet 时序递归状态在张量级 RPC 切分下的退化崩溃机理，确立“应用层 HTTP 专线协同”为跨机最优工程范式。<br>*Comprehensive forensic evaluation of Qwen3.8 high-tier variants (Swift 1.5 concise thinking, REAP-320 balance, Q3 vs QR Pareto efficiency), dual-machine heterogeneous topology (Desktop 5070Ti 16G+48G vs Laptop 4060 8G+64G), and Thunderbolt 18Gbps interconnect; establish theoretical root cause of DeltaNet recurrent memory collapse under tensor RPC, confirming application-level HTTP API mesh as optimal dual-node architecture.* |
+| 2026-10-09 | Staged Nudge Protocol (V5.4) | Feature & Interactive UI Hardening | 在 `run-coder-iq1_m-ultra.bat` 中升级实现 5 大推理模式与 3 大截断闭合模式的全量中英双语对照交互菜单；集成 Mode 5「阶段思维敲打与自然收敛协议 (Staged Nudge Protocol)」与 Wrap-up 3「阶段思维敲打通知 (Thinking Nudge Signal)」；确立“被敲打 = 没想完 = 严禁动手写代码”铁律；同步扩展 `serve/server.py` 支持 `--reasoning-wrap-up nudge`；严密规避 Windows CMD UTF-8 / CP936 行尾 ASCII 标签换行吞噬与转义字符漏洞。<br>*Upgrade `run-coder-iq1_m-ultra.bat` with a full-fledged bilingual (EN/CN) interactive menu covering 5 reasoning modes and 3 wrap-up styles; integrate Mode 5 "Staged Nudge & Natural Closure Protocol" paired with Wrap-up 3 "Thinking Nudge Signal"; establish the core iron rule "Nudged = Interrupted = Premature action prohibited, relay reasoning until natural closure"; extend `serve/server.py` to support `--reasoning-wrap-up nudge`; apply strict Windows CMD CRLF and ASCII line-ending safeguards.* |
 
 ---
+
 
 ## 7. 长思维链认知推理预算与双模 System Prompt 调优 (Reasoning Budget & Dual-Mode System Prompt Optimization - Version 4)
 
@@ -807,3 +809,67 @@ wrap_up = "\n\n[System: Thinking budget reached. Conclude reasoning immediately 
   4. 雷电 18Gbps 网络延迟仅 0.1~0.2ms，台式机开发环境调用笔记本如同调用本地服务。
 
 ---
+
+## 14. 阶段思维敲打与自然收敛协议体系 (Staged Nudge & Natural Closure Protocol Architecture - Version 5.4)
+
+### 14.1 核心设计逻辑：从“强行截断催促交差”到“敲打截断接力续思” (Core Philosophy Evolution)
+
+在早期版本及 Version 5.2 中，当思考触及阶段预算上限（Reasoning Budget）时，系统采用拟态第一人称催眠（`I have thought about this long enough; time to give my answer.`）或客观系统通知（`[System: Thinking budget reached. Conclude reasoning immediately and deliver the response based on current analysis.]`）。
+
+* **致命逻辑盲区发现**：
+  1. **为什么模型会收到敲打？** 因为它在当前阶段的推演中超时或触顶了阶段预算！既然是被外部强行截断的，说明它**根本就还没彻底想完**；
+  2. **催促交差的弊端**：如果在截断瞬间告诉模型“基于当前分析立刻交差输出代码”，模型往往会在极度不成熟的半成品状态下，仓促吐出一堆缺胳膊少腿、甚至包含占位符的残缺代码；
+  3. **用户确立的铁律机制**：
+     > **“被敲打 = 没想完 = 严禁动手！在当前正文仅留进度快照，下轮继续接力深思，直到由自己自然闭合思考标签（Natural Closure），才准输出代码和工具调用！”**
+
+---
+
+### 14.2 双核协同机制规范 (Dual-Core Protocol Specification)
+
+本套协议由开局注入的 **System Prompt 契约** 与触顶注入的 **Thinking Wrap-up 纯信号** 严格成对（Paired）运行：
+
+#### 1. 开局契约：System Prompt (Mode 5 - Staged Nudge Protocol)
+* **注入文件**：`E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja.nudge`
+* **注入文本 (EN)**：
+  > `"Reasoning effort is set to xhigh. Staged Nudge & Natural Closure Protocol: To prevent attention drift during deep reasoning, a staged budget guard is active. When reasoning hits the stage limit, the system truncates the thought and injects '[Thinking Nudge]'. When you observe '[Thinking Nudge]', you MUST strictly follow these rules: (1) No premature action: Receiving this nudge means your thinking was externally interrupted by the limit, NOT naturally completed. Absolutely do not rush into outputting code or tool calls; provide only a brief milestone checkpoint of your current analysis. (2) Relay reasoning: You must preserve current progress and actively resume reasoning in the next step, continuing across multiple nudges if needed. (3) Natural Closure Rule: You are ONLY permitted to emit code or tool calls when your reasoning concludes NATURALLY on its own within budget, never because of an external cutoff. Every line of delivered code must be the product of a fully and naturally matured thought."`
+* **中文释义**：
+  > “思考强度设为极高。阶段思维敲打与自然收敛协议：为了防止你在超长深度推演中注意力发散或思维跑偏，系统启用了阶段性预算敲打机制。当单次思考触及阶段上限时，系统会截断当前思考并注入信号：`[Thinking Nudge]`。当你收到 `[Thinking Nudge]` 信号时，必须绝对服从以下铁律：
+  > 1. **严禁仓促动手**：收到敲打信号意味着你刚才的思考是被系统强行截断的，绝非你自然思考完毕！此时绝对严禁仓促输出未想透的代码或发起工具调用，仅需对当前进度做简要里程碑记录；
+  > 2. **接力继续思考**：收到敲打后，你必须平稳承接上一阶段的思考成果，在下一轮中主动继续深入思考。哪怕连续经历多次敲打，也必须接力推演，不可放弃思考；
+  > 3. **唯一准出条件（自然收敛）**：**只有当你的思维真正彻底想透、在预算内由你自己【自然结束思考（`</think>` 正常闭合）】时，才允许正式输出代码与调用工具！** 确保交付的每一行代码都是思维自然成熟后的产物。”
+
+#### 2. 截断信号：Thinking Wrap-up (Option 3 - Staged Thinking Nudge)
+* **服务实现**：`serve/server.py` (`WRAP_UP_NUDGE`)，启动参数 `--reasoning-wrap-up nudge`
+* **注入文本 (EN)**：
+  > `\n\n[Thinking Nudge: Stage budget reached. Resume reasoning until natural closure.]\n</think>\n\n`
+* **中文释义**：
+  > “`[思考敲打：阶段思考预算触顶截断，请接力续思至自然收敛 (Thinking Nudge)]`”
+* **机制特点**：不替模型做决定，不催促交差，仅客观提供敲打提示与阶段界标，由模型根据协议自发行走下一次推演。
+
+---
+
+### 14.3 全量中英双语控制台交互菜单 (Full Bilingual Console Menu)
+
+在 `run-coder-iq1_m-ultra.bat` 中，启动菜单全部升级为原生中英文逐项展示，用户可在终端中直接对照原生英文 Prompt 与中文功能定位，消除“选择时忘记模式含义”的问题：
+
+1. **Step [1/3] 推理模式与提示词选择 (Reasoning Mode & Prompt)**：
+   * `[1] Original High`：官方原生无约束深思 (阿里原始 xhigh 提示词)；
+   * `[2] Optimized High`：防草稿纸影子编码 (正向架构门控提示词) [Recommended]；
+   * `[3] Medium Effort`：官方原生中等思考 (无系统提示词 / 纯净自然推演)；
+   * `[4] Low Effort`：官方原生低思考 (极简聚焦提示词)；
+   * `[5] Staged Nudge`：阶段思维敲打与自然收敛协议 (接力续思，配对 Wrap-up 3)。
+2. **Step [2/3] 思考预算 (Thinking Budget)**：
+   * 提供 0.5K 至 64K 的 10 档预设以及 `[C] Custom` 自定义任意 K 数。
+3. **Step [3/3] 截断闭合模式 (Thinking Wrap-up Style)**：
+   * `[1] Original Impersonation`：原汁原味第一人称伪装（`I have thought about this long enough...`）；
+   * `[2] Objective System Notice`：客观系统提示闭合（`[System: Thinking budget reached...]`）[Recommended for 1-4]；
+   * `[3] Staged Thinking Nudge`：阶段思维敲打通知（`[Thinking Nudge: Stage budget reached...]`）[Paired with Mode 5]。
+
+---
+
+### 14.4 Windows CMD 兼容性与编码防御标准 (Windows Batch Encoding Hardening)
+
+* **CRLF 强制换行**：Windows `cmd.exe` 在解析包含中文字符的批处理文件时，若遇到纯 Unix LF (`\n`) 极易发生命令拆分错误；本批次通过专用生成器 `tools/generate_ultra_bat.py` 强制保证全量 `\r\n` (CRLF)；
+* **ASCII 行尾守卫 (ASCII Line-Ending Rule)**：无论系统处于 CP936 还是 UTF-8 (CP65001)，所有包含中文的 `echo` 行尾均通过 ASCII 标签（如 `[Original]`, `[Staged Nudge]`）或空格保护，彻底杜绝 Windows CMD 吞噬回车符（`\r`）的底层解析缺陷；
+* **特殊字符转义**：严格转义 `^&`、`^<think^>`、`^</think^>`，保证在任意 Windows 终端中执行零报错。
+

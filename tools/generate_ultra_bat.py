@@ -1,8 +1,10 @@
-@echo off
+import os
+
+bat_content = """@echo off
 chcp 65001 >nul
 setlocal EnableExtensions
 title Strata Qwen3.8 Coder IQ1_M - 256K Ultra (High Performance Multimodal)
-cd /d "D:\Strata"
+cd /d "D:\\Strata"
 
 rem 0. Clean up any lingering engine processes and release VRAM/RAM
 tasklist /FI "IMAGENAME eq strata.exe" 2>nul | find /I /N "strata.exe" >nul
@@ -29,7 +31,7 @@ echo       ---------------------------------------------------------------------
 echo       [EN] "Reasoning effort is set to xhigh. Please think carefully through
 echo             the task, validate key assumptions, consider plausible alternatives,
 echo             and prioritize correctness, consistency, and clarity in the final answer."
-echo       [CN] 官方原始提示词：提示模型深入思考与自我验证，但无格式约束，易在草稿区 
+echo       [CN] 官方原始提示词：提示模型深入思考与自我验证，但无格式约束，易在草稿区
 echo            生成数百行完整代码（影子编码）导致 32K 触顶与语法截断。[Original]
 echo       -------------------------------------------------------------------------
 echo.
@@ -41,14 +43,14 @@ echo             edge-case contracts. Express your reasoning through concise sym
 echo             scratchpads, state transitions, and logical proofs. Reserve full
 echo             production code synthesis and large data assets exclusively for the
 echo             final response."
-echo       [CN] 生产优化提示词：强制将思考聚焦于架构、数学证明与状态机设计，严禁在 
+echo       [CN] 生产优化提示词：强制将思考聚焦于架构、数学证明与状态机设计，严禁在
 echo            思考区预先撰写正式生产代码与大数组，彻底消除影子编码浪费。[Optimized]
 echo       -------------------------------------------------------------------------
 echo.
 echo   [3] Medium Effort - 官方原生中等思考 (纯净无提示词) [Native Medium]
 echo       -------------------------------------------------------------------------
 echo       [EN] (No extra system instructions. Model reasons naturally.)
-echo       [CN] 官方中档纯净模式：不注入任何自定义提示词，依靠模型原生思考逻辑自发 
+echo       [CN] 官方中档纯净模式：不注入任何自定义提示词，依靠模型原生思考逻辑自发
 echo            推演并收敛，适合标准敏捷任务。[Native Medium]
 echo       -------------------------------------------------------------------------
 echo.
@@ -77,7 +79,7 @@ echo             NATURALLY on its own within budget, never because of an externa
 echo             Every line of delivered code must be the product of a fully and naturally
 echo             matured thought."
 echo       [CN] 阶段敲打协议（配对闭合模式 3）：将思考拆为阶段预算。被敲打截断 = 没想完 =
-echo            严禁动手写代码！在当前正文仅留进度快照，下轮主动接力续思，唯有当模型在 
+echo            严禁动手写代码！在当前正文仅留进度快照，下轮主动接力续思，唯有当模型在
 echo            预算内自然想透闭合时，才允许正式输出代码与调用工具。[Staged Nudge]
 echo       -------------------------------------------------------------------------
 echo ===============================================================================
@@ -90,31 +92,31 @@ if errorlevel 1 goto :mode_raw
 
 :mode_raw
 echo Activating Mode 1: Original Raw High Prompt...
-copy /y "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja.raw" "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja" >nul
+copy /y "E:\\Strata-data\\packs\\coder-iq1_m\\tokenizer\\chat_template.jinja.raw" "E:\\Strata-data\\packs\\coder-iq1_m\\tokenizer\\chat_template.jinja" >nul
 set "EFFORT=high"
 goto :select_budget
 
 :mode_opt
 echo Activating Mode 2: Optimized Battle-Tested Prompt...
-copy /y "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja.opt" "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja" >nul
+copy /y "E:\\Strata-data\\packs\\coder-iq1_m\\tokenizer\\chat_template.jinja.opt" "E:\\Strata-data\\packs\\coder-iq1_m\\tokenizer\\chat_template.jinja" >nul
 set "EFFORT=high"
 goto :select_budget
 
 :mode_med
 echo Activating Mode 3: Medium Effort (No System Prompt)...
-copy /y "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja.raw" "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja" >nul
+copy /y "E:\\Strata-data\\packs\\coder-iq1_m\\tokenizer\\chat_template.jinja.raw" "E:\\Strata-data\\packs\\coder-iq1_m\\tokenizer\\chat_template.jinja" >nul
 set "EFFORT=medium"
 goto :select_budget
 
 :mode_low
 echo Activating Mode 4: Low Effort (Focused Minimal Prompt)...
-copy /y "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja.raw" "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja" >nul
+copy /y "E:\\Strata-data\\packs\\coder-iq1_m\\tokenizer\\chat_template.jinja.raw" "E:\\Strata-data\\packs\\coder-iq1_m\\tokenizer\\chat_template.jinja" >nul
 set "EFFORT=low"
 goto :select_budget
 
 :mode_nudge
 echo Activating Mode 5: Staged Nudge and Natural Closure Protocol...
-copy /y "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja.nudge" "E:\Strata-data\packs\coder-iq1_m\tokenizer\chat_template.jinja" >nul
+copy /y "E:\\Strata-data\\packs\\coder-iq1_m\\tokenizer\\chat_template.jinja.nudge" "E:\\Strata-data\\packs\\coder-iq1_m\\tokenizer\\chat_template.jinja" >nul
 set "EFFORT=high"
 goto :select_budget
 
@@ -217,24 +219,24 @@ echo ===========================================================================
 echo.
 echo   [1] Original Impersonation - 原汁原味第一人称伪装 [Original]
 echo       -------------------------------------------------------------------------
-echo       [EN] "\n\nI have thought about this long enough; time to give my answer.\n^</think^>\n\n"
-echo       [CN] 拟态第一人称催眠：假装模型自己说「我已经想得够久了，该给答案了」，促使 
+echo       [EN] "\\n\\nI have thought about this long enough; time to give my answer.\\n^</think^>\\n\\n"
+echo       [CN] 拟态第一人称催眠：假装模型自己说「我已经想得够久了，该给答案了」，促使
 echo            模型结束思考并直接作答。[Original Impersonation]
 echo       -------------------------------------------------------------------------
 echo.
 echo   [2] Objective System Notice - 客观系统提示闭合 [System Notice] [Recommended for 1-4]
 echo       -------------------------------------------------------------------------
-echo       [EN] "\n\n[System: Thinking budget reached. Conclude reasoning immediately
-echo             and deliver the response based on current analysis.]\n^</think^>\n\n"
-echo       [CN] 客观系统通知：明确以第三方系统身份告知预算已达上限，指令模型立即收尾并 
+echo       [EN] "\\n\\n[System: Thinking budget reached. Conclude reasoning immediately
+echo             and deliver the response based on current analysis.]\\n^</think^>\\n\\n"
+echo       [CN] 客观系统通知：明确以第三方系统身份告知预算已达上限，指令模型立即收尾并
 echo            基于当前分析输出最终代码与结果。[Objective Notice]
 echo       -------------------------------------------------------------------------
 echo.
 echo   [3] Staged Thinking Nudge - 阶段思维敲打通知 (接力续思) [Paired with Mode 5]
 echo       -------------------------------------------------------------------------
-echo       [EN] "\n\n[Thinking Nudge: Stage budget reached. Resume reasoning until
-echo             natural closure.]\n^</think^>\n\n"
-echo       [CN] 阶段思维敲打纯信号（配对 Mode 5）：告知阶段预算截断，严禁仓促交差代码，促使 
+echo       [EN] "\\n\\n[Thinking Nudge: Stage budget reached. Resume reasoning until
+echo             natural closure.]\\n^</think^>\\n\\n"
+echo       [CN] 阶段思维敲打纯信号（配对 Mode 5）：告知阶段预算截断，严禁仓促交差代码，促使
 echo            模型保存当前进度快照并在下一轮中接力继续深入推演，直到自然成熟收敛。[Staged Nudge]
 echo       -------------------------------------------------------------------------
 echo ===============================================================================
@@ -266,7 +268,21 @@ echo   Thinking Budget : %BUDGET_NAME%
 echo   Wrap-up Style   : %WRAP_UP_NAME%
 echo   Launching Strata Engine...
 echo ===============================================================================
-"D:\Strata\.venv\Scripts\python.exe" "D:\Strata\serve\server.py" --engine strata --config "D:\Strata\strata-coder-iq1_m-ultra.json" --reasoning-budget-tokens %BUDGET_TOKENS% --reasoning-effort %EFFORT% --reasoning-wrap-up %WRAP_UP_ARG% --port 8080 --open
+"D:\\Strata\\.venv\\Scripts\\python.exe" "D:\\Strata\\serve\\server.py" --engine strata --config "D:\\Strata\\strata-coder-iq1_m-ultra.json" --reasoning-budget-tokens %BUDGET_TOKENS% --reasoning-effort %EFFORT% --reasoning-wrap-up %WRAP_UP_ARG% --port 8080 --open
 taskkill /F /IM strata.exe >nul 2>&1
 taskkill /F /IM strata-vision.exe >nul 2>&1
 if errorlevel 1 pause
+"""
+
+lines = bat_content.strip().splitlines()
+processed = []
+for line in lines:
+    if line and ord(line[-1]) > 127:
+        line += " "
+    processed.append(line)
+
+crlf_content = "\r\n".join(processed) + "\r\n"
+with open("D:/Strata/run-coder-iq1_m-ultra.bat", "wb") as f:
+    f.write(crlf_content.encode("utf-8"))
+print("Successfully generated D:/Strata/run-coder-iq1_m-ultra.bat with CRLF and ASCII line-ending safeguards!")
+

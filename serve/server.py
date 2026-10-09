@@ -77,6 +77,7 @@ REPEAT_STOP_TOKENS = 256
 # #123: what closes the thinking when it reaches reasoning_budget_tokens (the model's own end-of-thinking tag after it)
 WRAP_UP_ORIGINAL = "\n\nI have thought about this long enough; time to give my answer.\n</think>\n\n"
 WRAP_UP_SYSTEM = "\n\n[System: Thinking budget reached. Conclude reasoning immediately and deliver the response based on current analysis.]\n</think>\n\n"
+WRAP_UP_NUDGE = "\n\n[Thinking Nudge: Stage budget reached. Resume reasoning until natural closure.]\n</think>\n\n"
 REASONING_WRAP_UP = WRAP_UP_ORIGINAL
 LOOPBACK_NAMES = ("localhost", "127.0.0.1", "::1")
 CTX_SLACK = 8               # `strata --serve` rejects prompt + max_new + 8 > context: keep the same margin here
@@ -3952,9 +3953,9 @@ def main() -> int:
                          "overrides config and $STRATA_REASONING_BUDGET")
     ap.add_argument("--reasoning-effort", choices=["none", "low", "medium", "high", "xhigh"], default=None,
                     help="default reasoning effort (none, low, medium, high, xhigh); sets default for requests")
-    ap.add_argument("--reasoning-wrap-up", choices=["original", "system"], default=None,
+    ap.add_argument("--reasoning-wrap-up", choices=["original", "system", "nudge"], default=None,
                     help="style of closing thinking when budget is reached: "
-                         "'original' (impersonation), 'system' (objective system notice)")
+                         "'original' (impersonation), 'system' (objective system notice), 'nudge' (staged thinking nudge)")
     a = ap.parse_args()
     cfg = json.loads(Path(a.config).read_text(encoding="utf-8-sig")) if a.config else {}   # Notepad adds a BOM
     if a.reasoning_budget_tokens is not None:
@@ -4102,8 +4103,12 @@ def main() -> int:
     if wrap_style == "system":
         svc.reasoning_wrap_up = WRAP_UP_SYSTEM
         print("[strata] thinking wrap-up style: system (objective notice)", flush=True)
+    elif wrap_style == "nudge":
+        svc.reasoning_wrap_up = WRAP_UP_NUDGE
+        print("[strata] thinking wrap-up style: nudge (staged thinking nudge)", flush=True)
     else:
         svc.reasoning_wrap_up = WRAP_UP_ORIGINAL
+        print("[strata] thinking wrap-up style: original (first-person impersonation)", flush=True)
     svc.gpu_index = (gpu_list(cfg) or [0])[0]           # the Monitor reads the card the engine runs on (issue #51)
     svc.gpu_indices = gpu_list(cfg)                     # ... or every card of a layer split (issue #112)
     svc.backend = cfg.get("backend")                    # "hip": the AMD cards' readings come from sysfs (#301)
